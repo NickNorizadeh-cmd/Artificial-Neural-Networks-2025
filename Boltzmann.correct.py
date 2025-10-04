@@ -12,7 +12,7 @@ xor_data = np.array([
     [-1, -1, -1]
 ])
 hidden_units = [1, 2, 4, 8]
-M = hidden_units[1]
+M = hidden_units[2]
 v_max = 10000  # Reduced for faster testing
 p0 = 20
 k = 10
@@ -96,33 +96,29 @@ for epoch in range(v_max):
     Theta_h += delta_theta_h
     Theta_v += delta_theta_v
 
-def energy(v_vec, h_vec, W, Theta_v, Theta_h):
-    v_vec = np.array(v_vec).reshape((N, 1))
-    h_vec = np.array(h_vec).reshape((M, 1))
-    return - (h_vec.T @ W @ v_vec + Theta_v.T @ v_vec + Theta_h.T @ h_vec).item()
+# Compute the H - energy function to calculate the Boltzmann distritbution
+def H(W,h_vec, v_vec, Theta_v, Theta_h):   
+    H = -(h_vec.T @ W @ v_vec) + Theta_v.T @ v_vec + Theta_h.T @ h_vec
+    return H 
 
-def compute_model_distribution(W, Theta_v, Theta_h, N, M):
+def boltzmann_dist(W,h_vec,v_vec,Theta_v,Theta_h):
     visible_patterns = list(product([-1, 1], repeat=N))
     hidden_patterns = list(product([-1, 1], repeat=M))
-
+    
     Z = 0
-    P_v = {}
 
-    for v in visible_patterns:
-        v_energy_sum = 0
+    for v in visible_patterns:  # Compute Z for all possible combinations of h and v
         for h in hidden_patterns:
-            v_energy_sum += math.exp(-energy(v, h, W, Theta_v, Theta_h))
-        P_v[v] = v_energy_sum
-        Z += v_energy_sum
+            Z += math.exp(-H(W,h,v,Theta_v,Theta_h)) # Now we have Z
 
-    # Normalize
-    for v in P_v:
-        P_v[v] /= Z
+    return Z**-1 * math.exp(-H(W,h_vec,v_vec,Theta_v,Theta_h)) # This is a single Boltzmann distribution computed using the Z above
 
-    return P_v
-
-print (compute_model_distribution(W,Theta_v,Theta_h,N,M))
-
+prob_pattern = 0
+hidden_patterns = list(product([-1, 1], repeat=M))
+for pattern in xor_data:
+    for hidden_pattern in hidden_patterns:
+        prob_pattern += boltzmann_dist(W,hidden_pattern,pattern,Theta_v,Theta_h)
+    print(f"Boltzmann probability for v={pattern}, h={hidden_pattern}: {prob_pattern:.6f}")
 
 # Sampling to estimate model distribution
 #iterates = 100
