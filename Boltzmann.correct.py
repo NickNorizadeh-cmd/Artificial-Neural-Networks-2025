@@ -10,7 +10,7 @@ xor_data = np.array([
     [-1, -1, -1]
 ])
 hidden_units = [1, 2, 4, 8]
-v_max = 100  # Reduced for faster testing
+v_max = 10000  # Reduced for faster testing
 p0 = 20
 k = 10
 eta = 0.005
@@ -50,6 +50,7 @@ for M in hidden_units:
     Theta_v = np.zeros((N, 1))
     error_list = []
 
+    # CD-k algorithm
     for epoch in range(v_max):
         x_sample = np.random.choice(range(xor_data.shape[0]), size=p0)
         delta_w_m_n = np.zeros(W.shape)
@@ -66,8 +67,8 @@ for M in hidden_units:
                 prob = p(b_h[i])
                 h_vec[i] = 1 if r < prob else -1
 
-                b_h_0 = b_h.copy()
-                v_vec_0 = v_vec.copy()
+                b_h_0 = b_h.copy() # save the arguments that are b^h(0)
+                v_vec_0 = v_vec.copy()  # save the arguments that are v_n(0)
 
                 for t in range(k):
                     b_v = W.T @ h_vec - Theta_v
@@ -93,7 +94,7 @@ for M in hidden_units:
         Theta_v += delta_theta_v
 
     # Sampling to estimate model distribution
-    iterates = 100
+    iterates = 10000
 
     # Initialize v_vec and h_vec for sampling
     v_vec = xor_data[np.random.randint(0, len(xor_data))].reshape((N, 1))
@@ -104,22 +105,28 @@ for M in hidden_units:
     count2 = 0
     count3 = 0
     count4 = 0
+    count_not_in_xor = 0
 
     for t in range(iterates):
         if (np.array_equal(v_vec.flatten(),xor_data[0])):
             count1 += 1
-        if(np.array_equal(v_vec.flatten(),xor_data[1])):
+        elif(np.array_equal(v_vec.flatten(),xor_data[1])):
             count2 += 1
-        if(np.array_equal(v_vec.flatten(),xor_data[2])):
+        elif(np.array_equal(v_vec.flatten(),xor_data[2])):
             count3 += 1
-        if(np.array_equal(v_vec.flatten(),xor_data[3])):
+        elif(np.array_equal(v_vec.flatten(),xor_data[3])):
             count4 += 1
+        else:
+            count_not_in_xor += 1 # With this it will count all the cases that don't belong to XOR
+
 
         b_v = W.T @ h_vec - Theta_v
         for j in range(N):
             r = random.randint(0, 1)
             prob = p(b_v[j])
             v_vec[j] = 1 if r < prob else -1
+        
+        print("Sampled v_vec:", v_vec.flatten())
 
         b_h = W @ v_vec - Theta_h
         for i in range(M):
@@ -131,12 +138,15 @@ for M in hidden_units:
     fraction2 = count2/iterates
     fraction3 = count3/iterates
     fraction4 = count4/iterates
+    fraction5 = count_not_in_xor/iterates
 
 
-print(fraction1)
-print(fraction2)
-print(fraction3)
-print(fraction4)
+print(f"\nResults for M = {M}:")
+print(f"Pattern 1: {fraction1:.2f}")
+print(f"Pattern 2: {fraction2:.2f}")
+print(f"Pattern 3: {fraction3:.2f}")
+print(f"Pattern 4: {fraction4:.2f}")
+print(f"Non-XOR patterns: {fraction5:.2f}")
 
 
 
