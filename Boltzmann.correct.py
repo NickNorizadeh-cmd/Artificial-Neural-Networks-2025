@@ -1,5 +1,7 @@
 import numpy as np
 import random
+import math
+from itertools import product
 import matplotlib.pyplot as plt
 
 # XOR dataset: 4 patterns with equal probability
@@ -10,6 +12,7 @@ xor_data = np.array([
     [-1, -1, -1]
 ])
 hidden_units = [1, 2, 4, 8]
+M = hidden_units[2]
 v_max = 10000  # Reduced for faster testing
 p0 = 20
 k = 10
@@ -42,103 +45,127 @@ true_dist = {tuple(p): 0.25 for p in xor_data}
 kl_values = []
 theory_values = []
 
-for M in hidden_units:
-    print(f"\nTraining RBM with {M} hidden units...")
-    N = 3  # number of visible neurons
-    W = np.random.randn(M, N)
-    Theta_h = np.zeros((M, 1))
-    Theta_v = np.zeros((N, 1))
-    error_list = []
+#for M in hidden_units:
+print(f"\nTraining RBM with {M} hidden units...")
+N = 3  # number of visible neurons
+W = np.random.randn(M, N)
+Theta_h = np.zeros((M, 1))
+Theta_v = np.zeros((N, 1))
+error_list = []
 
-    # CD-k algorithm
-    for epoch in range(v_max):
-        x_sample = np.random.choice(range(xor_data.shape[0]), size=p0)
-        delta_w_m_n = np.zeros(W.shape)
-        delta_theta_v = np.zeros((N, 1))
-        delta_theta_h = np.zeros((M, 1))
+# CD-k algorithm
+for epoch in range(v_max):
+    x_sample = np.random.choice(range(xor_data.shape[0]), size=p0)
+    delta_w_m_n = np.zeros(W.shape)
+    delta_theta_v = np.zeros((N, 1))
+    delta_theta_h = np.zeros((M, 1))
 
-        for mu in range(p0):
-            v_vec = xor_data[x_sample[mu]].reshape((N, 1))
-            b_h = W @ v_vec - Theta_h
-            h_vec = np.zeros((M, 1))
-
-            for i in range(M):
-                r = random.randint(0, 1)
-                prob = p(b_h[i])
-                h_vec[i] = 1 if r < prob else -1
-
-                b_h_0 = b_h.copy() # save the arguments that are b^h(0)
-                v_vec_0 = v_vec.copy()  # save the arguments that are v_n(0)
-
-                for t in range(k):
-                    b_v = W.T @ h_vec - Theta_v
-                    for j in range(N):
-                        r = random.randint(0, 1)
-                        prob = p(b_v[j])
-                        v_vec[j] = 1 if r < prob else -1
-
-                    b_h = W @ v_vec - Theta_h
-                    for i in range(M):
-                        r = random.randint(0, 1)
-                        prob = p(b_h[i])
-                        h_vec[i] = 1 if r < prob else -1
-
-                first_term = np.outer(np.tanh(b_h_0), v_vec_0.T)
-                second_term = np.outer(np.tanh(b_h), v_vec.T)
-                delta_w_m_n += eta * (first_term - second_term)
-                delta_theta_v += eta * (v_vec_0 - v_vec)
-                delta_theta_h += eta * (np.tanh(b_h_0) - np.tanh(b_h))
-
-        W += delta_w_m_n
-        Theta_h += delta_theta_h
-        Theta_v += delta_theta_v
-
-    # Sampling to estimate model distribution
-    iterates = 10000
-
-    # Initialize v_vec and h_vec for sampling
-    v_vec = xor_data[np.random.randint(0, len(xor_data))].reshape((N, 1))
-    #b_h = W @ v_vec - Theta_h
-    #h_vec = np.where(np.random.rand(M, 1) < p(b_h), 1, -1)
-
-    count1 = 0
-    count2 = 0
-    count3 = 0
-    count4 = 0
-    count_not_in_xor = 0
-
-    for t in range(iterates):
-        if (np.array_equal(v_vec.flatten(),xor_data[0])):
-            count1 += 1
-        elif(np.array_equal(v_vec.flatten(),xor_data[1])):
-            count2 += 1
-        elif(np.array_equal(v_vec.flatten(),xor_data[2])):
-            count3 += 1
-        elif(np.array_equal(v_vec.flatten(),xor_data[3])):
-            count4 += 1
-        else:
-            count_not_in_xor += 1 # With this it will count all the cases that don't belong to XOR
-
-
-        b_v = W.T @ h_vec - Theta_v
-        for j in range(N):
-            r = random.randint(0, 1)
-            prob = p(b_v[j])
-            v_vec[j] = 1 if r < prob else -1
-        
-        print("Sampled v_vec:", v_vec.flatten())
-
+    for mu in range(p0):
+        v_vec = xor_data[x_sample[mu]].reshape((N, 1))
         b_h = W @ v_vec - Theta_h
+        h_vec = np.zeros((M, 1))
+
         for i in range(M):
             r = random.randint(0, 1)
             prob = p(b_h[i])
             h_vec[i] = 1 if r < prob else -1
 
-    fraction1 = count1/iterates
-    fraction2 = count2/iterates
-    fraction3 = count3/iterates
-    fraction4 = count4/iterates
-    fraction5 = count_not_in_xor/iterates
+            b_h_0 = b_h.copy() # save the arguments that are b^h(0)
+            v_vec_0 = v_vec.copy()  # save the arguments that are v_n(0)
+
+            for t in range(k):
+                b_v = W.T @ h_vec - Theta_v
+                for j in range(N):
+                    r = random.randint(0, 1)
+                    prob = p(b_v[j])
+                    v_vec[j] = 1 if r < prob else -1
+
+                b_h = W @ v_vec - Theta_h
+                for i in range(M):
+                    r = random.randint(0, 1)
+                    prob = p(b_h[i])
+                    h_vec[i] = 1 if r < prob else -1
+
+            first_term = np.outer(np.tanh(b_h_0), v_vec_0.T)
+            second_term = np.outer(np.tanh(b_h), v_vec.T)
+            delta_w_m_n += eta * (first_term - second_term)
+            delta_theta_v += eta * (v_vec_0 - v_vec)
+            delta_theta_h += eta * (np.tanh(b_h_0) - np.tanh(b_h))
+
+    W += delta_w_m_n
+    Theta_h += delta_theta_h
+    Theta_v += delta_theta_v
+
+# Compute the H - energy function to calculate the Boltzmann distritbution
+def H(h_vec, v_vec, Theta_v, Theta_h):   
+    H = W.T @ h_vec @ v_vec + Theta_v @ v_vec + Theta_h @ h_vec 
+    return H 
+
+def boltzmann_dist(h_vec,v_vec,Theta_v,Theta_h):
+    visible_patterns = list(product([-1, 1], repeat=N))
+    hidden_patterns = list(product([-1, 1], repeat=M))
+
+    for v in visible_patterns:  # Sum over Z for all possible input combinations of v and h 
+        for h in hidden_patterns:
+            Z += math.exp(-H(h,v,Theta_v,Theta_h))
+
+    return Z**-1 * math.exp(H(h_vec,v_vec,Theta_v,Theta_h))
+
+
+hidden_patterns = list(product([-1, 1], repeat=M))
+for hidden_pattern in hidden_patterns:
+    for pattern in xor_data:
+        boltzmann_dist(hidden_pattern,pattern,Theta_v,Theta_h)
+        print(f"The boltzmann distribution for pattern 1: {pattern:.2f}")
+
+
+
+# Sampling to estimate model distribution
+iterates = 100
+
+# Initialize v_vec and h_vec for sampling
+v_vec = xor_data[np.random.randint(0, len(xor_data))].reshape((N, 1))
+#b_h = W @ v_vec - Theta_h
+#h_vec = np.where(np.random.rand(M, 1) < p(b_h), 1, -1)
+
+count1 = 0
+count2 = 0
+count3 = 0
+count4 = 0
+count_not_in_xor = 0
+
+for t in range(iterates):
+    if (np.array_equal(v_vec.flatten(),xor_data[0])):
+        count1 += 1
+    elif(np.array_equal(v_vec.flatten(),xor_data[1])):
+        count2 += 1
+    elif(np.array_equal(v_vec.flatten(),xor_data[2])):
+        count3 += 1
+    elif(np.array_equal(v_vec.flatten(),xor_data[3])):
+        count4 += 1
+    else:
+        count_not_in_xor += 1 # With this it will count all the cases that don't belong to XOR
+
+
+    b_v = W.T @ h_vec - Theta_v
+    for j in range(N):
+        r = random.randint(0, 1)
+        prob = p(b_v[j])
+        v_vec[j] = 1 if r < prob else -1
+    
+    print("Sampled v_vec:", v_vec.flatten())
+
+    b_h = W @ v_vec - Theta_h
+    for i in range(M):
+        r = random.randint(0, 1)
+        prob = p(b_h[i])
+        h_vec[i] = 1 if r < prob else -1
+
+fraction1 = count1/iterates
+fraction2 = count2/iterates
+fraction3 = count3/iterates
+fraction4 = count4/iterates
+fraction5 = count_not_in_xor/iterates
 
 
 print(f"\nResults for M = {M}:")
