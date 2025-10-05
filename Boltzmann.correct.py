@@ -20,7 +20,7 @@ eta = 0.005
 N = 3  # Number of visible units
 
 def p(b_i):
-    return 1 / (1 + np.exp(-2 * b_i))
+    return 1 /(1 + np.exp(-2 * b_i))
 
 def kl_divergence(true_dist, model_dist):
     kl = 0.0
@@ -55,9 +55,14 @@ for epoch in range(v_max):
     delta_theta_h = np.zeros((M, 1))
 
     for mu in range(p0):
-        v_vec = xor_data[x_sample[mu]].reshape((N, 1))
+        pattern = xor_data[x_sample[mu]].copy() # the idea is to copy the xor_data and let v_vec point at the copy. 
+        v_vec = pattern # Instead of having v_vec reference xor_data so that each time v_vec changes so does xor_data. Now it just changes v_vec each iteration
+        v_test = xor_data[x_sample[mu]].reshape((N, 1)) 
+        print("v_test is", v_test)
+
         b_h = W @ v_vec - Theta_h
         h_vec = np.zeros((M, 1))
+
         for i in range(M):
             r = random.random()
             prob = p(b_h[i])
@@ -121,6 +126,4 @@ for pattern in xor_data:
     # Convert to clean Python tuple of ints
     clean_pattern = tuple(int(x) for x in pattern)
     model_dist[clean_pattern] = prob_v
-    print(f"P(v= {clean_pattern}) = {prob_v:.6f}")
-
-    
+    print(f"P(v={clean_pattern}) = {prob_v:.6f}")
