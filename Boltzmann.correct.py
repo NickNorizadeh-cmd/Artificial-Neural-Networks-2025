@@ -13,7 +13,7 @@ xor_data = np.array([
 ])
 hidden_units = [1, 2, 4, 8]
 M = hidden_units[2]  # You can loop over this later
-v_max = 10000
+v_max = 1000
 p0 = 20
 k = 10
 eta = 0.005
@@ -56,9 +56,10 @@ for epoch in range(v_max):
 
     for mu in range(p0):
         pattern = xor_data[x_sample[mu]].copy() # the idea is to copy the xor_data and let v_vec point at the copy. 
-        v_vec = pattern # Instead of having v_vec reference xor_data so that each time v_vec changes so does xor_data. Now it just changes v_vec each iteration
-        v_test = xor_data[x_sample[mu]].reshape((N, 1)) 
-        print("v_test is", v_test)
+        #v_vec = pattern # Instead of having v_vec reference xor_data so that each time v_vec changes so does xor_data. Now it just changes v_vec each iteration
+        #v_test = xor_data[x_sample[mu]].reshape((N, 1)) 
+        #print("v_test is", v_test)
+        v_vec = pattern.reshape((-1,1)) # causes an overflow with reshape. We want it to be a column vector for the matrix multiplication
 
         b_h = W @ v_vec - Theta_h
         h_vec = np.zeros((M, 1))
@@ -73,12 +74,14 @@ for epoch in range(v_max):
 
         for t in range(k):
             b_v = W.T @ h_vec - Theta_v
+            #print("Maximum value of b_v\n", max(abs(b_v)))
             for j in range(N):
                 r = random.random()
                 prob = p(b_v[j])
                 v_vec[j] = 1 if r < prob else -1
 
             b_h = W @ v_vec - Theta_h
+            #print("b_h second time\n", max(abs(b_h)))
             for i in range(M):
                 r = random.random()
                 prob = p(b_h[i])
