@@ -121,4 +121,6 @@ for pattern in xor_data:
     # Convert to clean Python tuple of ints
     clean_pattern = tuple(int(x) for x in pattern)
     model_dist[clean_pattern] = prob_v
-    print(f"P(v={clean_pattern}) = {prob_v:.6f}")
+    print(f"P(v= {clean_pattern}) = {prob_v:.6f}")
+
+    
