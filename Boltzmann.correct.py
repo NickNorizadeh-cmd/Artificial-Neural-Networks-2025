@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import math
+import itertools 
 from itertools import product
 import matplotlib.pyplot as plt
 
@@ -115,11 +116,14 @@ def boltzmann_dist(W, h_vec, v_vec, Theta_v, Theta_h):
     return math.exp(-H(W, h_vec, v_vec, Theta_v, Theta_h)) / Z
 
 # Compute marginal distribution P(v) for XOR patterns
-visible_patterns = list(product([-1, 1], repeat=N))
 hidden_patterns = list(product([-1, 1], repeat= M ))
 
 print("\nMarginal Boltzmann probabilities for XOR patterns:")
 model_dist = {}
+
+#h_test = np.array([[1],[1]])
+#W_test = np.array([[1,0],[1,0]])
+#print(boltzmann_dist(W_test, h_test, np.array([[-1],[1]])))
 
 for pattern in xor_data:
     prob_v = 0
@@ -130,3 +134,44 @@ for pattern in xor_data:
     clean_pattern = tuple(int(x) for x in pattern)
     model_dist[clean_pattern] = prob_v
     print(f"P(v={clean_pattern}) = {prob_v:.6f}")
+
+####### Lukas DKL and H -  energy function
+
+def Hamiltonian(weights, thresholds_v, thresholds_h, v, h):
+    H = -h.T @ weights @ v + thresholds_v.T @ v + thresholds_h.T @ h
+
+    return H
+
+
+def calculate_D_kl(W, Theta_v, Theta_h, xor_data,
+                   target_distribution):
+
+    N = W.shape[1]  # number of visible units
+    M = W.shape[0]  # number of hidden units
+
+    possible_h = np.array(list(itertools.product([-1, 1], repeat=M)))
+    possible_v = np.array(list(itertools.product([-1, 1], repeat=N)))
+
+    Z = 0
+    for v in possible_v:
+        for h in possible_h:
+            Z += np.exp(-Hamiltonian(W, Theta_v, Theta_h,
+                                     v.reshape(-1, 1), h.reshape(-1, 1)))
+    p_model = []
+    for v in xor_data:
+        p_v = 0
+        for h in possible_h:
+            p_v += np.exp(-Hamiltonian(W, Theta_v, Theta_h,
+                                       v.reshape(-1, 1), h.reshape(-1, 1)))
+        p_model.append(p_v / Z)
+    model_distribution = np.array(p_model).flatten()
+
+    #target_distribution = np.repeat(1 / 4, 4)
+
+    D_kl = np.sum(target_distribution *
+                  np.log(target_distribution / model_distribution))
+
+    return D_kl
+
+target_values = np.repeat(1 / 4, 4)
+print ("The value of the model distribution",calculate_D_kl(W,Theta_v,Theta_h,xor_data,target_values))
