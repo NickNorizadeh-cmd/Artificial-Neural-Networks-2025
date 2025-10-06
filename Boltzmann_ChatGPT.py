@@ -86,27 +86,34 @@ def theoretical_bound(M, N=3):
 # True XOR distribution
 true_dist = {tuple(p): 0.25 for p in xor_data}
 
-# Run experiments
+# Run multiple trials per M
 hidden_units = [1, 2, 4, 8]
-kl_values = []
+n_trials = 10  # Number of runs per M
+kl_results = {M: [] for M in hidden_units}
 theory_values = []
 
 for M in hidden_units:
-    rbm = RBMpm1(n_visible=3, n_hidden=M, learning_rate=0.05)
-    rbm.cd_k(xor_data, k=1, epochs=5000)
-    model_dist = rbm.estimate_distribution()
-    kl = kl_divergence(true_dist, model_dist)
-    kl_values.append(kl)
     theory_values.append(theoretical_bound(M))
-    print(f"M={M}, KL={kl:.4f}, Theory={theory_values[-1]:.4f}")
+    for _ in range(n_trials):
+        rbm = RBMpm1(n_visible=3, n_hidden=M, learning_rate=0.05)
+        rbm.cd_k(xor_data, k=1, epochs=5000)
+        model_dist = rbm.estimate_distribution()
+        kl = kl_divergence(true_dist, model_dist)
+        kl_results[M].append(kl)
 
-# Plot results
+
 plt.figure(figsize=(8, 5))
-plt.plot(hidden_units, kl_values, marker='o', label='Empirical KL divergence')
-plt.plot(hidden_units, theory_values, linestyle='--', label='Theory (Eq. 4.40)')
+
+# Scatter plot for empirical KL values
+for i, M in enumerate(hidden_units):
+    plt.scatter([M]*n_trials, kl_results[M], alpha=0.6, label=f'M={M}' if i == 0 else "")
+
+# Line plot for theoretical bound
+plt.plot(hidden_units, theory_values, linestyle='--', color='black', label='Theory (Eq. 4.40)')
+
 plt.xlabel('Number of Hidden Neurons (M)')
 plt.ylabel('KL Divergence')
-plt.title('KL Divergence vs. Hidden Units')
+plt.title('KL Divergence vs. Hidden Units (Multiple Runs)')
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
