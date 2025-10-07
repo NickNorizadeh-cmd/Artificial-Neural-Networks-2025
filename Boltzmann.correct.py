@@ -167,6 +167,7 @@ def calculate_D_kl(W, Theta_v, Theta_h, xor_data,
     model_distribution = np.array(p_model).flatten()
 
     #target_distribution = np.repeat(1 / 4, 4)
+    print()
 
     D_kl = np.sum(target_distribution *
                   np.log(target_distribution / model_distribution))
@@ -174,4 +175,4 @@ def calculate_D_kl(W, Theta_v, Theta_h, xor_data,
     return D_kl
 
 target_values = np.repeat(1 / 4, 4)
-print ("The value of the model distribution",calculate_D_kl(W,Theta_v,Theta_h,xor_data,target_values))
+print ("The value of the DKL",calculate_D_kl(W,Theta_v,Theta_h,xor_data,target_values))

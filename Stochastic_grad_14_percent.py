@@ -32,17 +32,18 @@ print("Training class balance (balanced):", np.unique(T, return_counts=True))
 print("Validation class balance:", np.unique(T_val, return_counts=True))
 
 # Hyperparameters
-M1, M2 = 9, 7
+M1, M2 = 6, 6
 lr = 0.01
-epochs = 200
+epochs = 500
 
 # Xavier initialization for tanh
 w1 = np.random.randn(M1, 2) * np.sqrt(1 / 2)
-t1 = np.random.randn(M1, 1) * 0.01
 w2 = np.random.randn(M2, M1) * np.sqrt(1 / M1)
-t2 = np.random.randn(M2, 1) * 0.01
 w3 = np.random.randn(M2, 1) * np.sqrt(1 / M2)
-t3 = np.random.randn(1) * 0.01 + 0.1
+t1 = np.zeros((M1, 1))
+t2 = np.zeros((M2, 1))
+t3 = np.zeros(1)
+
 
 # Activation functions
 def tanh(x): return np.tanh(x)
@@ -72,25 +73,26 @@ for epoch in range(epochs):
         O = tanh(-t3 + (w3.T @ V2)).item()
 
         error = O - t_i
-        do = error * dtanh(-t3 + (w3.T @ V2)).item()
+        
+        delta3 = error * dtanh(-t3 + (w3.T @ V2)).item()
+        
+        dw3 = lr * delta3 * V2
+        dt3 = -lr* delta3
 
-        dw3 = do * V2
-        dt3 = -do
+        delta2 = (delta3 * w3) * dtanh(-t2 + w2 @ V1)
+        dw2 = lr * delta2 @ V1.T # dw2 has dimension M2x1 * 1xM1 = M2xM1
+        dt2 = -lr* delta2
 
-        dV2 = (w3 * do) * dtanh(-t2 + w2 @ V1)
-        dw2 = dV2 @ V1.T
-        dt2 = -dV2
+        delta1 = (w2.T @ delta2) * dtanh(-t1 + w1 @ x_i)
+        dw1 = lr * delta1 @ x_i.T
+        dt1 = -lr* delta1
 
-        dV1 = (w2.T @ dV2) * dtanh(-t1 + w1 @ x_i)
-        dw1 = dV1 @ x_i.T
-        dt1 = -dV1
-
-        w3 -= lr * dw3
-        t3 -= lr * dt3
-        w2 -= lr * dw2
-        t2 -= lr * dt2
-        w1 -= lr * dw1
-        t1 -= lr * dt1
+        w3 -= dw3
+        t3 -= dt3
+        w2 -= dw2
+        t2 -= dt2
+        w1 -= dw1
+        t1 -= dt1
 
     # Learning rate decay
     if epoch % 50 == 0 and epoch > 0:
@@ -115,9 +117,9 @@ for epoch in range(epochs):
             print(f"✅ Early stopping: validation error below 12% (C = {best_C:.4f})")
             break
 
-        if wait >= patience:
-            print("⏹️ Early stopping: no improvement in validation error")
-            break
+        #if wait >= patience:
+           # print("⏹️ Early stopping: no improvement in validation error")
+            #break
 
 # Diagnostic printout
 print("\n🔍 Sample Predictions vs Targets:")
