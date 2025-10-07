@@ -21,12 +21,17 @@ def dtanh(x): return 1 - np.tanh(x)**2
 
 
 def training_algorithm (patterns, eta, nu_max, M1, M2):
-    w1 = np.random.randn(M1, 2) 
-    w2 = np.random.randn(M2, M1)
-    w3 = np.random.randn(M2)
-    t1 = np.zeros(M1)  
-    t2 = np.zeros(M2)
-    t3 = np.zeros(1)
+   # w1 = np.random.randn(M1, 2) * np.sqrt(1 / M1)
+    #w2 = np.random.randn(M2, M1) * np.sqrt(1 / M2)
+   # w3 = np.random.randn(M2) * np.sqrt(1 / M2)
+
+    w1, t1 = np.random.normal(0, np.sqrt(1/2), size = [M1,2]), np.zeros(M1)
+    w2, t2 = np.random.normal(0, np.sqrt(1/M1), size = [M2,M1]), np.zeros(M2)
+    w3, t3 = np.random.normal(0, np.sqrt(1/M2), size = M2), np.zeros(1)
+
+    #t1 = np.zeros(M1)  
+    #t2 = np.zeros(M2)
+    #t3 = np.zeros(1)
     V1 = np.zeros(M1)
     V2 = np.zeros(M2)
     
@@ -94,6 +99,15 @@ output_errors = np.abs(output_signs - np.reshape(validation_set[:,2], output_sig
 validation_error = np.sum(output_errors)
 validation_error/= (2*pval)
 print("The validation error is", validation_error)
+
+
+# Save weights
+np.savetxt("w1.csv", w_1, delimiter=",")
+np.savetxt("w2.csv", w_2, delimiter=",")
+np.savetxt("w3.csv", w_3.T, delimiter=",")
+np.savetxt("t1.csv", theta_1.T, delimiter=",")
+np.savetxt("t2.csv", theta_2.T, delimiter=",")
+np.savetxt("t3.csv", np.array([theta_3]), delimiter=",")
 
 
 
