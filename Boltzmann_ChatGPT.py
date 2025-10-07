@@ -18,7 +18,7 @@ def sample_pm1(prob):
 
 # RBM class for ±1 neurons
 class RBMpm1:
-    def __init__(self, n_visible, n_hidden, learning_rate=0.05):
+    def __init__(self, n_visible, n_hidden, learning_rate=0.005):
         self.n_visible = n_visible
         self.n_hidden = n_hidden
         self.lr = learning_rate
@@ -26,7 +26,7 @@ class RBMpm1:
         self.theta_h = np.zeros(n_hidden)
         self.theta_v = np.zeros(n_visible)
 
-    def cd_k(self, data, k=1, epochs=5000):
+    def cd_k(self, data, k=10, epochs=10000):
         for epoch in range(epochs):
             v0 = data[np.random.randint(0, len(data))]
             b_h0 = self.W @ v0 - self.theta_h
@@ -96,7 +96,7 @@ for M in hidden_units:
     theory_values.append(theoretical_bound(M))
     for _ in range(n_trials):
         rbm = RBMpm1(n_visible=3, n_hidden=M, learning_rate=0.05)
-        rbm.cd_k(xor_data, k=1, epochs=5000)
+        rbm.cd_k(xor_data, k=1, epochs=10000)
         model_dist = rbm.estimate_distribution()
         kl = kl_divergence(true_dist, model_dist)
         kl_results[M].append(kl)
