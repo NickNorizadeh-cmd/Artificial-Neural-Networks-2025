@@ -101,7 +101,6 @@ for M in hidden_units:
         kl = kl_divergence(true_dist, model_dist)
         kl_results[M].append(kl)
 
-
 plt.figure(figsize=(8, 5))
 
 # Scatter plot for empirical KL values
